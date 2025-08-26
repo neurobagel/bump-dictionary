@@ -2,6 +2,33 @@
 
 `bump-dictionary` is a tool to help migrate your existing Neurobagel data dictionaries to the latest data dictionary schema.
 
+## Installation
+
+Currently, `bump-dictionary` works with Python 3.10+.
+
+The Neurobagel CLI can be installed from [PyPI](https://pypi.org/project/bagel/) using `pip`.
+
+1. (Recommended) Create and activate a Python virtual environment (using a tool such as [venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments)).
+
+2. Install the `bump-dictionary` package into your virtual environment:
+    ```bash
+    pip install bump-dictionary
+    ```
+
+## Usage
+
+To upgrade a Neurobagel data dictionary in your current directory named `my_dataset_dictionary.json`, run in your terminal:
+
+```bash
+bump-dictionary my_dataset_dictionary.json
+```
+
+By default, the updated data dictionary file will be saved to `./updated_dictionary.json`.
+
+For full CLI help, run:
+```
+bump-dictionary -h
+```
 
 ## Development environment
 
