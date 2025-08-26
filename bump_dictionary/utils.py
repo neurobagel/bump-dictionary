@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator
-from logger import log_error, logger
+
+from .logger import log_error, logger
 
 
 def load_json(file: Path) -> Any:

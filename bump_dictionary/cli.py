@@ -1,18 +1,20 @@
 from pathlib import Path
 
 import typer
-import utils
-from logger import log_error, logger
-from models import new_dictionary_model, old_dictionary_model
 from typing_extensions import Annotated
+
+from . import utils
+from .logger import log_error, logger
+from .models import new_dictionary_model, old_dictionary_model
 
 bump_dictionary = typer.Typer(
     help="Bump Neurobagel data dictionaries to the latest version of the data dictionary schema.",
-    # context_settings={"help_option_names": ["-h", "--help"]},
+    context_settings={"help_option_names": ["-h", "--help"]},
     rich_markup_mode="rich",
 )
 
 
+@bump_dictionary.command()
 def main(
     data_dictionary: Annotated[
         Path,
@@ -36,7 +38,7 @@ def main(
             )
         log_error(
             logger,
-            "The data dictionary is not valid against previous schema and may be too outdated to upgrade automatically. "
+            "The data dictionary is not valid against the previous schema and may be too outdated to upgrade automatically. "
             "Please re-annotate your dataset using the latest version of the annotation tool to continue.\n"
             f"Found {len(old_schema_validation_errs)} error(s):\n"
             f"{validation_errs}",
@@ -54,4 +56,4 @@ def main(
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    bump_dictionary()
