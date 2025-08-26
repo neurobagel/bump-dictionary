@@ -4,9 +4,7 @@
 
 ## Installation
 
-Currently, `bump-dictionary` works with Python 3.10+.
-
-The Neurobagel CLI can be installed from [PyPI](https://pypi.org/project/bagel/) using `pip`.
+`bump-dictionary` currently works with Python 3.10+, and can be installed from [PyPI](https://pypi.org/project/bagel/) using `pip`:
 
 1. (Recommended) Create and activate a Python virtual environment (using a tool such as [venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments)).
 
