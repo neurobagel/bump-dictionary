@@ -1,10 +1,11 @@
+import json
 from pathlib import Path
 
 import typer
 from typing_extensions import Annotated
 
 from . import utils
-from .logger import log_error, logger
+from .logger import configure_logger, log_error, logger
 from .models import new_dictionary_model, old_dictionary_model
 
 bump_dictionary = typer.Typer(
@@ -22,19 +23,37 @@ def main(
     ],
     output: Annotated[
         Path, typer.Argument(help="Path to save the output JSON file.")
-    ] = Path("bumped_dictionary.json"),
+    ] = Path("updated_dictionary.json"),
 ):
-    current_dict = utils.load_json(data_dictionary)
-
-    old_schema_validation_errs = utils.validate_against_dictionary_schema(
-        current_dict, old_dictionary_model.DataDictionary.model_json_schema()
+    # TODO: See if we need to move this into a callback to set the verbosity level
+    configure_logger()
+    old_dictionary_schema = (
+        old_dictionary_model.DataDictionary.model_json_schema()
+    )
+    new_dictionary_schema = (
+        new_dictionary_model.DataDictionary.model_json_schema()
     )
 
+    current_dict = utils.load_json(data_dictionary)
+
+    if not utils.get_validation_errors_for_schema(
+        current_dict, new_dictionary_schema
+    ):
+        log_error(
+            logger,
+            "Data dictionary is already up-to-date with the latest schema.",
+        )
+
+    old_schema_validation_errs = utils.get_validation_errors_for_schema(
+        current_dict, old_dictionary_schema
+    )
     if old_schema_validation_errs:
         validation_errs = ""
         for error in old_schema_validation_errs:
             validation_errs += (
-                " ->" + ".".join(map(str, error.path)) + f": {error.message}\n"
+                " -> "
+                + ".".join(map(str, error.path))
+                + f": {error.message}\n"
             )
         log_error(
             logger,
@@ -44,16 +63,34 @@ def main(
             f"{validation_errs}",
         )
 
-    new_schema_validation_errs = utils.validate_against_dictionary_schema(
-        current_dict, new_dictionary_model.DataDictionary.model_json_schema()
-    )
-
-    if not new_schema_validation_errs:
-        logger.info(
-            "Data dictionary is already up-to-date with the latest schema."
+    try:
+        updated_dict = utils.encode_variable_type(current_dict)
+        new_schema_validation_errs = utils.get_validation_errors_for_schema(
+            updated_dict, new_dictionary_schema
         )
-        raise typer.Exit(code=0)
+        if new_schema_validation_errs:
+            validation_errs = ""
+            for error in new_schema_validation_errs:
+                validation_errs += (
+                    " -> "
+                    + ".".join(map(str, error.path))
+                    + f": {error.message}\n"
+                )
+            log_error(
+                logger,
+                "Upgrading the data dictionary resulted in unexpected validation errors against the latest schema.\n"
+                f"Found {len(new_schema_validation_errs)} error(s):\n"
+                f"{validation_errs}",
+            )
+    except Exception as e:
+        log_error(
+            logger,
+            f"An unexpected error occurred while upgrading the data dictionary: {e}",
+        )
 
+    with open(output, "w") as f:
+        f.write(json.dumps(updated_dict, indent=2))
 
-if __name__ == "__main__":
-    bump_dictionary()
+    logger.info(
+        f"Successfully updated data dictionary. Output saved to {output}"
+    )
