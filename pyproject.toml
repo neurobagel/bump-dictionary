@@ -61,3 +61,6 @@ no_warn_no_return = true
 warn_redundant_casts = true
 show_error_codes = true
 pretty = true
+
+[tool.codespell]
+skip = 'tests/data/*,pyproject.toml'
