@@ -8,7 +8,7 @@ dynamic = ["version"]
 license = { file = "LICENSE" }
 authors = [{ name = "Neurobagel Developers" }]
 maintainers = [{ name = "Sebastian Urchs", email = "sebastian.urchs@mcgill.ca" }]
-description = "Bump Neurobagel data dictionaries to the latest version of the data dictionary schema."
+description = "Convert Neurobagel data dictionaries to the latest version of the data dictionary schema."
 readme = "README.md"
 classifiers = [
   "Development Status :: 1 - Planning",
@@ -33,14 +33,10 @@ test = [
 dev = ["bump-dictionary[test]", "pre-commit"]
 
 [project.scripts]
-bump-dictionary = "bump-dictionary.cli:bump-dictionary"
+bump-dictionary = "bump_dictionary.cli:bump_dictionary"
 
 [tool.hatch.build.targets.wheel]
-packages = ["bump-dictionary"]
-# include = [
-#   "bump-dictionary/pipeline-catalog/**/*",
-#   "bump-dictionary/communities/**/*",
-# ]
+packages = ["bump_dictionary"]
 
 [tool.hatch.build.targets.sdist]
 exclude = ["tests/**"]  # omit deeply nested test data from the source tarball
