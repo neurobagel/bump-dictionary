@@ -12,7 +12,7 @@ DATETIME_FMT = "[%Y-%m-%d %X]"
 # Check if code is currently running in a test environment
 IS_TESTING = "pytest" in sys.modules
 
-logger = logging.getLogger("bagel.logger")
+logger = logging.getLogger("bump_dictionary.logger")
 
 
 class VerbosityLevel(str, Enum):

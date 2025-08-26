@@ -1,11 +1,10 @@
-import json
 from pathlib import Path
 
 import typer
 from typing_extensions import Annotated
 
 from . import utils
-from .logger import configure_logger, log_error, logger
+from .logger import VerbosityLevel, configure_logger, log_error, logger
 from .models import new_dictionary_model, old_dictionary_model
 
 bump_dictionary = typer.Typer(
@@ -24,9 +23,24 @@ def main(
     output: Annotated[
         Path, typer.Argument(help="Path to save the output JSON file.")
     ] = Path("updated_dictionary.json"),
+    verbosity: Annotated[
+        VerbosityLevel,
+        typer.Option(
+            "--verbosity",
+            "-v",
+            callback=configure_logger,
+            help="Set the verbosity level of the output. 0 = show errors only; 1 = show errors, warnings, and informational messages; 3 = show all logs, including debug messages.",
+        ),
+    ] = VerbosityLevel.INFO,
+    overwrite: Annotated[
+        bool,
+        typer.Option(
+            "--overwrite",
+            "-f",
+            help="Overwrite the output file if it already exists.",
+        ),
+    ] = False,
 ):
-    # TODO: See if we need to move this into a callback to set the verbosity level
-    configure_logger()
     old_dictionary_schema = (
         old_dictionary_model.DataDictionary.model_json_schema()
     )
@@ -88,8 +102,7 @@ def main(
             f"An unexpected error occurred while upgrading the data dictionary: {e}",
         )
 
-    with open(output, "w") as f:
-        f.write(json.dumps(updated_dict, indent=2))
+    utils.save_json(updated_dict, output, overwrite)
 
     logger.info(
         f"Successfully updated data dictionary. Output saved to {output}"

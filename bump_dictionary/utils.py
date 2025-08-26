@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Type
 
+import typer
 from jsonschema import Draft202012Validator
 from pydantic import ValidationError
 
@@ -31,6 +32,20 @@ def load_json(file: Path) -> Any:
             logger,
             f"Data dictionary is not valid JSON: {file}.",
         )
+
+
+def save_json(data: dict, file: Path, overwrite: bool):
+    """Save a dictionary as a JSON file."""
+    if file.exists() and not overwrite:
+        raise typer.Exit(
+            typer.style(
+                f"Output file {file} already exists. Use --overwrite or -f to overwrite.",
+                fg=typer.colors.RED,
+            )
+        )
+
+    with open(file, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def get_validation_errors_for_schema(
