@@ -28,6 +28,10 @@
                 "TermURL": "nb:FromEuro",
                 "Label": "european decimal value"
             },
+            "Transformation": {
+                "TermURL": "nb:FromEuro",
+                "Label": "european decimal value"
+            },
             "MissingValues": [
                 "NA"
             ]

@@ -73,8 +73,10 @@ def main(
         legacy_dictionary_model.DataDictionary.model_validate(input_dict)
     except ValidationError as legacy_schema_validation_errs:
         invalid_cols = {}
+        # Below, we customize the user-facing error to avoid printing a large number of non-discriminative
+        # validation errors from Pydantic attempts to validate the dict against each possible column type
         for validation_err in legacy_schema_validation_errs.errors():
-            # In a validation error, "loc" gives us the location of the error (with the first item being the column name key)
+            # In a validation error, "loc" gives us the location of the error (the first item being the column name key)
             # and "input" gives us the actual offending value (the contents of the column dict).
             # Since a single column can produce multiple validation errors, here we collect each unique offending column once.
             invalid_cols.update(

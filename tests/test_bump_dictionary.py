@@ -133,4 +133,7 @@ def test_invalid_dictionary_not_upgraded(
     assert result.exit_code != 0
     assert len(caplog.records) == 1
     assert "not valid against the legacy schema" in caplog.text
-    assert "2 error(s)" in caplog.text
+    assert "3 error(s)" in caplog.text
+    assert all(
+        col in caplog.text for col in ["participant", "session", "pheno_age"]
+    )
