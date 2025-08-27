@@ -53,10 +53,10 @@ def main(
         latest_dictionary_model.DataDictionary.model_json_schema()
     )
 
-    current_dict = utils.load_json(data_dictionary)
+    input_dict = utils.load_json(data_dictionary)
 
     if not utils.get_validation_errors_for_schema(
-        current_dict, latest_dictionary_schema
+        input_dict, latest_dictionary_schema
     ):
         log_error(
             logger,
@@ -64,7 +64,7 @@ def main(
         )
 
     legacy_schema_validation_errs = utils.get_validation_errors_for_schema(
-        current_dict, legacy_dictionary_schema
+        input_dict, legacy_dictionary_schema
     )
     if legacy_schema_validation_errs:
         validation_errs = ""
@@ -76,13 +76,13 @@ def main(
             )
         log_error(
             logger,
-            "The data dictionary is not valid against the previous schema and may be too outdated to upgrade automatically. "
+            "The data dictionary is not valid against the legacy schema and may be too outdated to upgrade automatically. "
             "Please re-annotate your dataset using the latest version of the annotation tool to continue.\n"
             f"Found {len(legacy_schema_validation_errs)} error(s):\n"
             f"{validation_errs}",
         )
 
-    updated_dict = utils.convert_transformation_to_format(current_dict)
+    updated_dict = utils.convert_transformation_to_format(input_dict)
     updated_dict = utils.encode_variable_type(updated_dict)
 
     latest_schema_validation_errs = utils.get_validation_errors_for_schema(
