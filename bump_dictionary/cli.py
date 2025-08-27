@@ -19,10 +19,15 @@ bump_dictionary = typer.Typer(
 def main(
     data_dictionary: Annotated[
         Path,
-        typer.Argument(help="Path to a Neurobagel data dictionary JSON file."),
+        typer.Argument(
+            help="Path to the Neurobagel data dictionary JSON file to be updated."
+        ),
     ],
     output: Annotated[
-        Path, typer.Argument(help="Path to save the output JSON file.")
+        Path,
+        typer.Argument(
+            help="Path to save the updated data dictionary JSON file."
+        ),
     ] = Path("updated_dictionary.json"),
     verbosity: Annotated[
         VerbosityLevel,
