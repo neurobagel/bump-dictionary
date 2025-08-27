@@ -22,10 +22,10 @@
 
 ## Usage
 
-To upgrade a Neurobagel data dictionary in your current directory named `my_dataset_dictionary.json`, run in your terminal:
+To upgrade a Neurobagel data dictionary in your current directory named `my_old_dictionary.json`, run in your terminal:
 
 ```bash
-bump-dictionary my_dataset_dictionary.json
+bump-dictionary my_old_dictionary.json
 ```
 
 By default, the updated data dictionary file will be saved to `./updated_dictionary.json`.
