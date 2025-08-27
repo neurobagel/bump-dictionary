@@ -19,7 +19,7 @@ def example_dictionaries_path():
 
 @pytest.fixture(scope="function")
 def example_output_path(tmp_path):
-    return tmp_path / "my_updated_dictionary.json"
+    return tmp_path / "updated_dictionary.json"
 
 
 @pytest.fixture(scope="session")
@@ -35,7 +35,7 @@ def test_valid_legacy_dictionary_upgraded(
     load_test_json, example_dictionaries_path, runner, example_output_path
 ):
     """Test that a data dictionary valid against the previous schema is upgraded correctly."""
-    target_dict = load_test_json(
+    target_latest_dict = load_test_json(
         example_dictionaries_path / "latest_schema_dictionary.json"
     )
 
@@ -50,7 +50,40 @@ def test_valid_legacy_dictionary_upgraded(
     output = load_test_json(example_output_path)
 
     assert result.exit_code == 0
-    assert output == target_dict
+    assert output == target_latest_dict
+
+
+def test_valid_legacy_dictionary_with_transformation_upgraded(
+    load_test_json,
+    example_dictionaries_path,
+    runner,
+    example_output_path,
+    caplog,
+):
+    """
+    Test that a valid legacy data dictionary containing 'Transformation' for continuous columns
+    is upgraded correctly, with 'Transformation' renamed to 'Format'.
+    """
+    target_latest_dict = load_test_json(
+        example_dictionaries_path / "latest_schema_dictionary.json"
+    )
+
+    result = runner.invoke(
+        bump_dictionary,
+        [
+            str(
+                example_dictionaries_path
+                / "legacy_schema_dictionary_with_transformation.json"
+            ),
+            str(example_output_path),
+        ],
+    )
+
+    output = load_test_json(example_output_path)
+
+    assert result.exit_code == 0
+    assert "Renaming 'Transformation' to 'Format'" in caplog.text
+    assert output == target_latest_dict
 
 
 def test_valid_latest_dictionary_not_upgraded(
