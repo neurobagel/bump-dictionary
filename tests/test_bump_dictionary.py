@@ -34,7 +34,7 @@ def load_test_json():
 def test_valid_legacy_dictionary_upgraded(
     load_test_json, example_dictionaries_path, runner, example_output_path
 ):
-    """Test that a data dictionary valid against the previous schema is upgraded correctly."""
+    """Test that a data dictionary valid against the legacy schema is upgraded correctly."""
     target_latest_dict = load_test_json(
         example_dictionaries_path / "latest_schema_dictionary.json"
     )
@@ -83,6 +83,15 @@ def test_valid_legacy_dictionary_with_transformation_upgraded(
 
     assert result.exit_code == 0
     assert "Renaming 'Transformation' to 'Format'" in caplog.text
+    age_col = next(
+        (
+            col
+            for col in output.values()
+            if col.get("Annotations", {}).get("IsAbout", {}).get("TermURL")
+            == "nb:Age"
+        ),
+    )
+    assert "Format" in age_col["Annotations"]
     assert output == target_latest_dict
 
 
@@ -91,7 +100,7 @@ def test_valid_latest_dictionary_not_upgraded(
 ):
     """
     Test that a data dictionary valid against the latest schema is not upgraded,
-    with an informative error.
+    and the app exits with an informative error and no output.
     """
     result = runner.invoke(
         bump_dictionary,
@@ -110,7 +119,7 @@ def test_invalid_dictionary_not_upgraded(
     example_dictionaries_path, runner, caplog
 ):
     """
-    Test that a data dictionary which is not valid against the previous schema is not upgraded,
+    Test that a data dictionary which is not valid against the legacy schema is not upgraded,
     with an informative error.
     """
     result = runner.invoke(
@@ -123,5 +132,5 @@ def test_invalid_dictionary_not_upgraded(
 
     assert result.exit_code != 0
     assert len(caplog.records) == 1
-    assert "not valid against the previous schema" in caplog.text
+    assert "not valid against the legacy schema" in caplog.text
     assert "2 error(s)" in caplog.text
