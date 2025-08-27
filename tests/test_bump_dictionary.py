@@ -13,8 +13,13 @@ def runner():
 
 
 @pytest.fixture(scope="session")
-def test_data():
+def example_dictionaries_path():
     return Path(__file__).absolute().parent / "data"
+
+
+@pytest.fixture(scope="function")
+def example_output_path(tmp_path):
+    return tmp_path / "my_updated_dictionary.json"
 
 
 @pytest.fixture(scope="session")
@@ -27,27 +32,35 @@ def load_test_json():
 
 
 def test_valid_old_dictionary_upgraded(
-    load_test_json, test_data, runner, tmp_path
+    load_test_json, example_dictionaries_path, runner, example_output_path
 ):
-    target_dict = load_test_json(test_data / "new_dictionary.json")
-    output_path = tmp_path / "my_updated_dictionary.json"
+    target_dict = load_test_json(
+        example_dictionaries_path / "new_dictionary.json"
+    )
 
     result = runner.invoke(
         bump_dictionary,
-        [str(test_data / "old_dictionary.json"), str(output_path)],
+        [
+            str(example_dictionaries_path / "old_dictionary.json"),
+            str(example_output_path),
+        ],
     )
 
-    output = load_test_json(output_path)
+    output = load_test_json(example_output_path)
 
     assert result.exit_code == 0
     assert output == target_dict
 
 
 def test_valid_new_dictionary_unchanged(
-    load_test_json, test_data, runner, tmp_path, caplog
+    example_dictionaries_path, runner, caplog
 ):
     result = runner.invoke(
-        bump_dictionary, [str(test_data / "new_dictionary.json")]
+        bump_dictionary,
+        [
+            str(example_dictionaries_path / "new_dictionary.json"),
+            str(example_output_path),
+        ],
     )
 
     assert result.exit_code != 0
@@ -56,10 +69,14 @@ def test_valid_new_dictionary_unchanged(
 
 
 def test_invalid_dictionary_errors_out(
-    load_test_json, test_data, runner, tmp_path, caplog
+    example_dictionaries_path, runner, caplog
 ):
     result = runner.invoke(
-        bump_dictionary, [str(test_data / "invalid_dictionary.json")]
+        bump_dictionary,
+        [
+            str(example_dictionaries_path / "invalid_dictionary.json"),
+            str(example_output_path),
+        ],
     )
 
     assert result.exit_code != 0

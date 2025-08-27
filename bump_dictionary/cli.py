@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import typer
@@ -41,29 +42,33 @@ def main(
         ),
     ] = False,
 ):
-    old_dictionary_schema = (
-        old_dictionary_model.DataDictionary.model_json_schema()
+    utils.check_overwrite(output, overwrite)
+
+    legacy_dictionary_schema = (
+        utils.patch_schema_to_allow_transformation_or_format(
+            old_dictionary_model.DataDictionary.model_json_schema()
+        )
     )
-    new_dictionary_schema = (
+    latest_dictionary_schema = (
         new_dictionary_model.DataDictionary.model_json_schema()
     )
 
     current_dict = utils.load_json(data_dictionary)
 
     if not utils.get_validation_errors_for_schema(
-        current_dict, new_dictionary_schema
+        current_dict, latest_dictionary_schema
     ):
         log_error(
             logger,
             "Data dictionary is already up-to-date with the latest schema.",
         )
 
-    old_schema_validation_errs = utils.get_validation_errors_for_schema(
-        current_dict, old_dictionary_schema
+    legacy_schema_validation_errs = utils.get_validation_errors_for_schema(
+        current_dict, legacy_dictionary_schema
     )
-    if old_schema_validation_errs:
+    if legacy_schema_validation_errs:
         validation_errs = ""
-        for error in old_schema_validation_errs:
+        for error in legacy_schema_validation_errs:
             validation_errs += (
                 " -> "
                 + ".".join(map(str, error.path))
@@ -73,36 +78,35 @@ def main(
             logger,
             "The data dictionary is not valid against the previous schema and may be too outdated to upgrade automatically. "
             "Please re-annotate your dataset using the latest version of the annotation tool to continue.\n"
-            f"Found {len(old_schema_validation_errs)} error(s):\n"
+            f"Found {len(legacy_schema_validation_errs)} error(s):\n"
             f"{validation_errs}",
         )
 
-    try:
-        updated_dict = utils.encode_variable_type(current_dict)
-        new_schema_validation_errs = utils.get_validation_errors_for_schema(
-            updated_dict, new_dictionary_schema
-        )
-        if new_schema_validation_errs:
-            validation_errs = ""
-            for error in new_schema_validation_errs:
-                validation_errs += (
-                    " -> "
-                    + ".".join(map(str, error.path))
-                    + f": {error.message}\n"
-                )
-            log_error(
-                logger,
-                "Upgrading the data dictionary resulted in unexpected validation errors against the latest schema.\n"
-                f"Found {len(new_schema_validation_errs)} error(s):\n"
-                f"{validation_errs}",
+    updated_dict = utils.convert_transformation_to_format(current_dict)
+    updated_dict = utils.encode_variable_type(updated_dict)
+
+    latest_schema_validation_errs = utils.get_validation_errors_for_schema(
+        updated_dict, latest_dictionary_schema
+    )
+    if latest_schema_validation_errs:
+        validation_errs = ""
+        for error in latest_schema_validation_errs:
+            validation_errs += (
+                " -> "
+                + ".".join(map(str, error.path))
+                + f": {error.message}\n"
             )
-    except Exception as e:
         log_error(
             logger,
-            f"An unexpected error occurred while upgrading the data dictionary: {e}",
+            "Unexpected validation errors occurred after upgrading the data dictionary to the latest schema.\n"
+            f"Found {len(latest_schema_validation_errs)} error(s):\n"
+            f"{validation_errs}"
+            "Something likely went wrong in the upgrade process on our side. "
+            "Please open an issue in https://github.com/neurobagel/bump-dictionary/issues.",
         )
 
-    utils.save_json(updated_dict, output, overwrite)
+    with open(output, "w", encoding="utf-8") as f:
+        json.dump(updated_dict, f, ensure_ascii=False, indent=2)
 
     logger.info(
         f"Successfully updated data dictionary. Output saved to {output}"

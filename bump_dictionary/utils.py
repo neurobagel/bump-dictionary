@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Type
 
@@ -34,8 +35,8 @@ def load_json(file: Path) -> Any:
         )
 
 
-def save_json(data: dict, file: Path, overwrite: bool):
-    """Save a dictionary as a JSON file."""
+def check_overwrite(file: Path, overwrite: bool):
+    """Exit program gracefully if an output file already exists but --overwrite is not enabled."""
     if file.exists() and not overwrite:
         raise typer.Exit(
             typer.style(
@@ -44,8 +45,26 @@ def save_json(data: dict, file: Path, overwrite: bool):
             )
         )
 
-    with open(file, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def patch_schema_to_allow_transformation_or_format(schema: dict) -> dict:
+    """
+    Patch a data dictionary schema to allow for either a 'Format' or 'Transformation' key
+    (but not both) for continuous columns.
+    This ensures that all v1 annotation tool data dictionaries pass the legacy schema validation
+    without encoding the deprecated 'Transformation' key in the data dictionary model itself.
+    """
+    patched_schema = deepcopy(schema)
+    continuous_schema = patched_schema["$defs"]["ContinuousNeurobagel"]
+    continuous_schema["properties"]["Transformation"] = deepcopy(
+        continuous_schema["properties"]["Format"]
+    )
+    if "Format" in continuous_schema.get("required", []):
+        continuous_schema["required"].remove("Format")
+    continuous_schema["oneOf"] = [
+        {"required": ["Transformation"], "not": {"required": ["Format"]}},
+        {"required": ["Format"], "not": {"required": ["Transformation"]}},
+    ]
+    return patched_schema
 
 
 def get_validation_errors_for_schema(
@@ -57,6 +76,22 @@ def get_validation_errors_for_schema(
     validator = Draft202012Validator(schema)
     errors = list(validator.iter_errors(data_dictionary))
     return errors
+
+
+def convert_transformation_to_format(data_dict: dict) -> dict:
+    """
+    Rename any 'Transformation' keys under 'Annotations' to 'Format'.
+    """
+    for col_name, col in data_dict.items():
+        if "Transformation" in col.get("Annotations", {}):
+            logger.info(
+                f"Renaming 'Transformation' to 'Format' for column annotation: {col_name}"
+            )
+            col["Annotations"]["Format"] = col["Annotations"].pop(
+                "Transformation"
+            )
+
+    return data_dict
 
 
 def is_valid_annotated_column(
@@ -90,4 +125,5 @@ def encode_variable_type(data_dictionary: dict) -> dict:
                     col_annotations.pop("Identifies", None)
                     col_annotations["VariableType"] = variable_type
                     break
+
     return data_dictionary
