@@ -8,7 +8,7 @@ from jsonschema import Draft202012Validator
 from pydantic import ValidationError
 
 from .logger import log_error, logger
-from .models.old_dictionary_model import (
+from .models.legacy_dictionary_model import (
     CategoricalNeurobagel,
     ContinuousNeurobagel,
     IdentifierNeurobagel,

@@ -6,7 +6,7 @@ from typing_extensions import Annotated
 
 from . import utils
 from .logger import VerbosityLevel, configure_logger, log_error, logger
-from .models import new_dictionary_model, old_dictionary_model
+from .models import latest_dictionary_model, legacy_dictionary_model
 
 bump_dictionary = typer.Typer(
     help="Bump Neurobagel data dictionaries to the latest version of the data dictionary schema.",
@@ -46,11 +46,11 @@ def main(
 
     legacy_dictionary_schema = (
         utils.patch_schema_to_allow_transformation_or_format(
-            old_dictionary_model.DataDictionary.model_json_schema()
+            legacy_dictionary_model.DataDictionary.model_json_schema()
         )
     )
     latest_dictionary_schema = (
-        new_dictionary_model.DataDictionary.model_json_schema()
+        latest_dictionary_model.DataDictionary.model_json_schema()
     )
 
     current_dict = utils.load_json(data_dictionary)

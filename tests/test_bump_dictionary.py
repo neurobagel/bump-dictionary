@@ -31,17 +31,18 @@ def load_test_json():
     return _read_file
 
 
-def test_valid_old_dictionary_upgraded(
+def test_valid_legacy_dictionary_upgraded(
     load_test_json, example_dictionaries_path, runner, example_output_path
 ):
+    """Test that a data dictionary valid against the previous schema is upgraded correctly."""
     target_dict = load_test_json(
-        example_dictionaries_path / "new_dictionary.json"
+        example_dictionaries_path / "latest_schema_dictionary.json"
     )
 
     result = runner.invoke(
         bump_dictionary,
         [
-            str(example_dictionaries_path / "old_dictionary.json"),
+            str(example_dictionaries_path / "legacy_schema_dictionary.json"),
             str(example_output_path),
         ],
     )
@@ -52,13 +53,17 @@ def test_valid_old_dictionary_upgraded(
     assert output == target_dict
 
 
-def test_valid_new_dictionary_unchanged(
+def test_valid_latest_dictionary_not_upgraded(
     example_dictionaries_path, runner, caplog
 ):
+    """
+    Test that a data dictionary valid against the latest schema is not upgraded,
+    with an informative error.
+    """
     result = runner.invoke(
         bump_dictionary,
         [
-            str(example_dictionaries_path / "new_dictionary.json"),
+            str(example_dictionaries_path / "latest_schema_dictionary.json"),
             str(example_output_path),
         ],
     )
@@ -68,9 +73,13 @@ def test_valid_new_dictionary_unchanged(
     assert "already up-to-date" in caplog.text
 
 
-def test_invalid_dictionary_errors_out(
+def test_invalid_dictionary_not_upgraded(
     example_dictionaries_path, runner, caplog
 ):
+    """
+    Test that a data dictionary which is not valid against the previous schema is not upgraded,
+    with an informative error.
+    """
     result = runner.invoke(
         bump_dictionary,
         [
