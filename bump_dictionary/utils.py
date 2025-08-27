@@ -1,9 +1,7 @@
 import json
-from copy import deepcopy
 from pathlib import Path
 from typing import Any, Type
 
-import typer
 from jsonschema import Draft202012Validator
 from pydantic import ValidationError
 
@@ -33,38 +31,6 @@ def load_json(file: Path) -> Any:
             logger,
             f"Data dictionary is not valid JSON: {file}.",
         )
-
-
-def check_overwrite(file: Path, overwrite: bool):
-    """Exit program gracefully if an output file already exists but --overwrite is not enabled."""
-    if file.exists() and not overwrite:
-        raise typer.Exit(
-            typer.style(
-                f"Output file {file} already exists. Use --overwrite or -f to overwrite.",
-                fg=typer.colors.RED,
-            )
-        )
-
-
-def patch_schema_to_allow_transformation_or_format(schema: dict) -> dict:
-    """
-    Patch a data dictionary schema to allow for either a 'Format' or 'Transformation' key
-    (but not both) for continuous columns.
-    This ensures that all v1 annotation tool data dictionaries pass the legacy schema validation
-    without encoding the deprecated 'Transformation' key in the data dictionary model itself.
-    """
-    patched_schema = deepcopy(schema)
-    continuous_schema = patched_schema["$defs"]["ContinuousNeurobagel"]
-    continuous_schema["properties"]["Transformation"] = deepcopy(
-        continuous_schema["properties"]["Format"]
-    )
-    if "Format" in continuous_schema.get("required", []):
-        continuous_schema["required"].remove("Format")
-    continuous_schema["oneOf"] = [
-        {"required": ["Transformation"], "not": {"required": ["Format"]}},
-        {"required": ["Format"], "not": {"required": ["Transformation"]}},
-    ]
-    return patched_schema
 
 
 def get_validation_errors_for_schema(

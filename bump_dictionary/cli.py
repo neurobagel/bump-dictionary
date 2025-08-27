@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import typer
+from pydantic import ValidationError
 from typing_extensions import Annotated
 
 from . import utils
@@ -47,19 +48,19 @@ def main(
         ),
     ] = False,
 ):
-    utils.check_overwrite(output, overwrite)
-
-    legacy_dictionary_schema = (
-        utils.patch_schema_to_allow_transformation_or_format(
-            legacy_dictionary_model.DataDictionary.model_json_schema()
+    if output.exists() and not overwrite:
+        raise typer.Exit(
+            typer.style(
+                f"Output file {output} already exists. Use --overwrite or -f to overwrite.",
+                fg=typer.colors.RED,
+            )
         )
-    )
-    latest_dictionary_schema = (
-        latest_dictionary_model.DataDictionary.model_json_schema()
-    )
 
     input_dict = utils.load_json(data_dictionary)
 
+    latest_dictionary_schema = (
+        latest_dictionary_model.DataDictionary.model_json_schema()
+    )
     if not utils.get_validation_errors_for_schema(
         input_dict, latest_dictionary_schema
     ):
@@ -68,23 +69,30 @@ def main(
             "Data dictionary is already up-to-date with the latest schema.",
         )
 
-    legacy_schema_validation_errs = utils.get_validation_errors_for_schema(
-        input_dict, legacy_dictionary_schema
-    )
-    if legacy_schema_validation_errs:
-        validation_errs = ""
-        for error in legacy_schema_validation_errs:
-            validation_errs += (
-                " -> "
-                + ".".join(map(str, error.path))
-                + f": {error.message}\n"
+    try:
+        legacy_dictionary_model.DataDictionary.model_validate(input_dict)
+    except ValidationError as legacy_schema_validation_errs:
+        invalid_cols = {}
+        for validation_err in legacy_schema_validation_errs.errors():
+            # In a validation error, "loc" gives us the location of the error (with the first item being the column name key)
+            # and "input" gives us the actual offending value (the contents of the column dict).
+            # Since a single column can produce multiple validation errors, here we collect each unique offending column once.
+            invalid_cols.update(
+                {validation_err["loc"][0]: validation_err["input"]}
+            )
+
+        invalid_col_err_messages = ""
+        for col_name, col_contents in invalid_cols.items():
+            invalid_col_err_messages += (
+                f" -> {col_name}: {col_contents} "
+                + "is not a valid column annotation under the legacy schema\n"
             )
         log_error(
             logger,
             "The data dictionary is not valid against the legacy schema and may be too outdated to upgrade automatically. "
             "Please re-annotate your dataset using the latest version of the annotation tool to continue.\n"
-            f"Found {len(legacy_schema_validation_errs)} error(s):\n"
-            f"{validation_errs}",
+            f"Found {len(invalid_cols)} error(s):\n"
+            f"{invalid_col_err_messages}",
         )
 
     updated_dict = utils.convert_transformation_to_format(input_dict)

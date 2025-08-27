@@ -6,6 +6,7 @@ from pydantic import (
     ConfigDict,
     Field,
     RootModel,
+    model_validator,
 )
 from pydantic_core import PydanticCustomError
 from typing_extensions import Annotated
@@ -85,13 +86,36 @@ class ContinuousNeurobagel(Neurobagel):
     """A Neurobagel annotation for a continuous column"""
 
     format: Identifier = Field(
-        ...,
+        None,
         description="For continuous columns this field is used to describe "
         "the format of the raw numerical values in the column. This information is used to transform "
         "the column values into the desired format of the standardized "
         "data element referenced in the IsAbout attribute.",
         alias="Format",
     )
+    # NOTE: This additional field is not actually part of the legacy schema,
+    # and is included purely for validating older data dictionaries generated
+    # before 'Format' was renamed to 'Format'.
+    transformation: Identifier = Field(
+        None,
+        description="Legacy name for the 'Format' field. "
+        "This field is only included in the schema for backwards compatibility with legacy data dictionaries.",
+        alias="Transformation",
+    )
+
+    # NOTE: This validation will not appear in a jsonschema.
+    # See also https://github.com/pydantic/pydantic/issues/506
+    @model_validator(mode="after")
+    def check_format_or_transformation_included(self):
+        """Allow for either a 'Format' or 'Transformation' key, but not both."""
+        if not (self.format or self.transformation):
+            # Only mention the up-to-date property name if neither exists
+            raise ValueError("Required property 'Format' is missing.")
+        if self.format and self.transformation:
+            raise ValueError(
+                "Only one of 'Format' or 'Transformation' can be included in the annotation. Please remove one of these keys."
+            )
+        return self
 
 
 class IdentifierNeurobagel(Neurobagel):
