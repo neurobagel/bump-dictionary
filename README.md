@@ -22,7 +22,7 @@
 
 ## Usage
 
-To upgrade a Neurobagel data dictionary in your current directory named `my_old_dictionary.json`, run in your terminal:
+To upgrade a Neurobagel data dictionary in your current directory named `my_legacy_dictionary.json`, run in your terminal:
 
 ```bash
 bump-dictionary my_legacy_dictionary.json
