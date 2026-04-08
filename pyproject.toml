@@ -29,12 +29,12 @@ dependencies = [
   "isodate",
 ]
 
-[project.optional-dependencies]
-test = [
+[dependency-groups]
+dev = [
   "pytest",
   "coverage",
+  'pre-commit'
 ]
-dev = ["bump-dictionary[test]", "pre-commit"]
 
 [project.scripts]
 bump-dictionary = "bump_dictionary.cli:bump_dictionary"
