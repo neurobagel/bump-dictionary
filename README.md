@@ -38,21 +38,27 @@ bump-dictionary -h
 ## Development environment
 
 ### Setting up a local development environment
-1. Clone the repository
+
+1. Set up a Python environment. We [use `uv` for this](https://docs.astral.sh/uv/getting-started/installation/).
+
+2. Clone the repository
 
     ```bash
     git clone https://github.com/neurobagel/bump-dictionary.git
     cd bump-dictionary
     ```
 
-2. Install the CLI and all development dependencies in editable mode:
+3. Install the CLI and all development dependencies in editable mode:
 
     ```bash
-    pip install -e ".[dev]"
+    uv sync --group dev
     ```
 
 Confirm that everything works well by running the tests: 
-`pytest .`
+`uv run pytest .`
+
+You can use `uv` to run `bump-dictionary` during development:
+`uv run bump-dictionary <ARGS> [OPTIONS]`
 
 ### Setting up code formatting and linting (recommended)
 
@@ -60,7 +66,7 @@ Confirm that everything works well by running the tests:
 
 Run the following from the repository root to install the configured pre-commit "hooks" for your local clone of the repo:
 ```bash
-pre-commit install
+uv run pre-commit install
 ```
 
 pre-commit will now run automatically whenever you run `git commit`.
