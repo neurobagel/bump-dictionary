@@ -57,6 +57,9 @@ bump-dictionary -h
 Confirm that everything works well by running the tests: 
 `uv run pytest .`
 
+You can use `uv` to run `bump-dictionary` during development:
+`uv run bump-dictionary <ARGS> [OPTIONS]`
+
 ### Setting up code formatting and linting (recommended)
 
 [pre-commit](https://pre-commit.com/) is configured in the development environment for this repository, and can be set up to automatically run a number of code linters and formatters on any commit you make according to the consistent code style set for this project.
